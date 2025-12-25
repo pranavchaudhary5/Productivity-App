@@ -30,12 +30,7 @@ class manager:
 
     def readall(self):
         for t in self.storage:
-            print("Task ID: ")
-            print(t.id)
-
-            print("Task Name: ")
-            print(t.name)
-            print("\n")
+            print(t)
 
     def readone(self):
         userid = int(input("Enter task id: "))

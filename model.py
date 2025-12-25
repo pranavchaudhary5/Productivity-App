@@ -10,6 +10,9 @@ class task:
         self.name = name
         self.content = content
 
+    def __repr__(self):
+        return f"Task(id={self.id}, name={self.name!r}, content={self.content!r})"
 
-
+    def __str__(self):
+        return f"[{self.id}] {self.name}"
 
