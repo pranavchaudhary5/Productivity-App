@@ -43,7 +43,30 @@ class manager:
 
         print("Task Description: ")
         print(self.storage[userid - 1].content)
+
+        print("Task Status: ")
+        print(self.storage[userid - 1].status)
         print("\n")
+
+    def completed(self):
+        userid = int(input("Enter task id: "))
+        self.storage[userid - 1].status = "Completed"
+        print("Task marked as Completed\n")
+
+    def todo(self):
+        userid = int(input("Enter task id: "))
+        self.storage[userid - 1].status = "Todo"
+        print("Task marked as Todo\n")
+
+    def viewcompleted(self):
+        for t in self.storage:
+            if t.status == "Completed":
+                print(t)
+
+    def viewtodo(self):
+        for t in self.storage:
+            if t.status == "Todo":
+                print(t)
 
     def edit(self):
         userid = int(input("Enter task id: "))

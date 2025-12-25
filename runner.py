@@ -11,33 +11,44 @@ if __name__ == '__main__':
         print("1,  Create Task")
         print("2,  View all Task")
         print("3,  View Specific Task")
-        print("4,  Edit Task")
-        print("5,  Delete Task")
-        print("6,  Exit\n")
+        print("4,  Mark Task as Completed")
+        print("5,  Mark Task as Todo")
+        print("6,  View all Completed Tasks")
+        print("7,  View all Todo Tasks")
+        print("8,  Edit Task")
+        print("9,  Delete Task")
+        print("10,  Exit\n")
 
         choice = input("Enter your choice: \n")
-        #CREATE
+
         if choice == "1":
             Manager.create()
 
-        #READ ALL
         if choice == "2":
             Manager.readall()
 
-        #READ SPECIFIC
         if choice == "3":
             Manager.readone()
 
-        #EDIT
         if choice == "4":
+            Manager.completed()
+
+        if choice == "5":
+            Manager.todo()
+
+        if choice == "6":
+            Manager.viewcompleted()
+
+        if choice == "7":
+            Manager.viewtodo()
+
+        if choice == "8":
             Manager.edit()
 
-        #DELETE
-        if choice == "5":
+        if choice == "9":
             Manager.delete()
 
-        #EXIT
-        if choice == "6":
+        if choice == "10":
             break
 
 
