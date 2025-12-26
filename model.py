@@ -16,5 +16,5 @@ class task:
         return f"Task(id={self.id}, name={self.name!r}, status={self.status!r} content={self.content!r})"
 
     def __str__(self):
-        return f"[{self.id}] {self.name}"
+        return f"{self.name} [{self.id}]"
 

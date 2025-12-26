@@ -9,15 +9,14 @@ if __name__ == '__main__':
         print("Welcome to the Task App")
         print("What you wanna do today ?\n")
         print("1,  Create Task")
-        print("2,  View all Task")
-        print("3,  View Specific Task")
-        print("4,  Mark Task as Completed")
-        print("5,  Mark Task as Todo")
-        print("6,  View all Completed Tasks")
-        print("7,  View all Todo Tasks")
-        print("8,  Edit Task")
-        print("9,  Delete Task")
-        print("10,  Exit\n")
+        print("2,  View Tasks")
+        print("3,  Mark Task as Completed")
+        print("4,  Mark Task as Todo")
+        print("5,  View all Completed Tasks")
+        print("6,  View all Todo Tasks")
+        print("7,  Edit Task")
+        print("8,  Delete Task")
+        print("9,  Exit\n")
 
         choice = input("Enter your choice: \n")
 
@@ -28,27 +27,24 @@ if __name__ == '__main__':
             Manager.readall()
 
         if choice == "3":
-            Manager.readone()
-
-        if choice == "4":
             Manager.completed()
 
-        if choice == "5":
+        if choice == "4":
             Manager.todo()
 
-        if choice == "6":
+        if choice == "5":
             Manager.viewcompleted()
 
-        if choice == "7":
+        if choice == "6":
             Manager.viewtodo()
 
-        if choice == "8":
+        if choice == "7":
             Manager.edit()
 
-        if choice == "9":
+        if choice == "8":
             Manager.delete()
 
-        if choice == "10":
+        if choice == "9":
             break
 
 

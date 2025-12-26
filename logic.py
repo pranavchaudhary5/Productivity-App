@@ -1,75 +1,109 @@
 from model import task
 
-
 class manager:
+
+
+    def SearchByID(self):
+        userid = int(input("Enter task ID: "))
+        for t in self.storage:
+            if t.id == userid:
+                return t
+
+
+    def SearchByName(self):
+        username = (input("Enter task Name: "))
+        for t in self.storage:
+            if t.name == username:
+                return t
+
 
     def __init__(self):
         self.storage = []
+        self.i = 0
+
 
     def create(self):
+        self.i = self.i + 1
+
         name = input("Enter task name: ")
         content = input("Enter task description: ")
 
-        num = len(self.storage) + 1
-
         Task = task()
-        Task.set(num, name, content)
+        Task.set(self.i, name, content)
         self.storage.append(Task)
-
         print("Task added.\n")
 
-        print("Task ID: ")
-        print(self.storage[num - 1].id)
-
-        print("Task Name: ")
-        print(self.storage[num - 1].name)
-
-        print("Task Description: ")
-        print(self.storage[num - 1].content)
-        print("\n")
 
     def readall(self):
-        for t in self.storage:
-            print(t)
+        while True:
+            text = "S.no:"
+            sno = 0
+            for t in self.storage:
+                sno = sno + 1
+                print(text,sno,t)
 
-    def readone(self):
-        userid = int(input("Enter task id: "))
+            print("Enter 1 to View by Serial Number")
+            print("Enter 2 to View by Name")
+            print("Enter 3 to View by ID")
+            print("Enter 4 to Exit")
+            print("\n")
+            choice1 = int(input("Enter choice: "))
 
-        print("Task ID: ")
-        print(self.storage[userid - 1].id)
+            if choice1 == 1:
+                user = int(input("Enter serial number: "))
+                print("\n")
+                print(self.storage[user-1].name)
+                print(self.storage[user-1].id)
+                print(self.storage[user-1].status)
+                print(self.storage[user-1].content)
+                print("\n")
 
-        print("Task Name: ")
-        print(self.storage[userid - 1].name)
+            if choice1 == 2:
+                d = self.SearchByName()
+                print(d.name)
+                print(d.id)
+                print(d.status)
+                print(d.content)
+                print("\n")
 
-        print("Task Description: ")
-        print(self.storage[userid - 1].content)
+            if choice1 == 3:
+                d = self.SearchByID()
+                print(d.name)
+                print(d.id)
+                print(d.status)
+                print(d.content)
+                print("\n")
 
-        print("Task Status: ")
-        print(self.storage[userid - 1].status)
-        print("\n")
+            if choice1 == 4:
+                break
+
 
     def completed(self):
-        userid = int(input("Enter task id: "))
-        self.storage[userid - 1].status = "Completed"
+        d = self.SearchByID()
+        d.status = "Completed"
         print("Task marked as Completed\n")
 
+
     def todo(self):
-        userid = int(input("Enter task id: "))
-        self.storage[userid - 1].status = "Todo"
+        d = self.SearchByID()
+        d.status = "Todo"
         print("Task marked as Todo\n")
+
 
     def viewcompleted(self):
         for t in self.storage:
             if t.status == "Completed":
                 print(t)
 
+
     def viewtodo(self):
         for t in self.storage:
             if t.status == "Todo":
                 print(t)
 
+
     def edit(self):
-        userid = int(input("Enter task id: "))
+        userid = int(input("Enter task ID: "))
 
         while True:
             print("1,  Edit Task Name")
@@ -79,22 +113,30 @@ class manager:
             choice = input("Enter your choice: \n")
 
             if choice == "1":
-                name = input("Enter new task name: ")
-                self.storage[userid - 1].name = name
+                for t in self.storage:
+                    if t.id == userid:
+                        name = input("Enter new task name: ")
+                        t.name = name
+                        print("Name Updated")
 
             if choice == "2":
-                content = input("Enter new task description: ")
-                self.storage[userid - 1].content = content
+                for t in self.storage:
+                    if t.id == userid:
+                        content = input("Enter new task description: ")
+                        t.content = content
+                        print("Content Updated")
 
             if choice == "3":
                 break
 
+
     def delete(self):
-        userid = int(input("Enter task id to delete: "))
-        self.storage.remove(self.storage[userid - 1])
-        print("Task deleted.\n")
-
-        for i in range(1, len(self.storage) + 1):
-            self.storage[i - 1].id = i
-
-
+        text = "S.no:"
+        sno = 0
+        for t in self.storage:
+            sno = sno + 1
+            print(text, sno, t)
+        userinput = int(input("Enter serial number to delete: "))
+        self.storage.remove(self.storage[userinput-1])
+        print("Task deleted")
+        print("\n")
