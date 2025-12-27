@@ -23,28 +23,29 @@ if __name__ == '__main__':
         if choice == "1":
             Manager.create()
 
-        if choice == "2":
+        elif choice == "2":
             Manager.readall()
 
-        if choice == "3":
+        elif choice == "3":
             Manager.completed()
 
-        if choice == "4":
+        elif choice == "4":
             Manager.todo()
 
-        if choice == "5":
+        elif choice == "5":
             Manager.viewcompleted()
 
-        if choice == "6":
+        elif choice == "6":
             Manager.viewtodo()
 
-        if choice == "7":
+        elif choice == "7":
             Manager.edit()
 
-        if choice == "8":
+        elif choice == "8":
             Manager.delete()
 
-        if choice == "9":
+        elif choice == "9":
             break
 
-
+        else :
+            print("Invalid choice")
