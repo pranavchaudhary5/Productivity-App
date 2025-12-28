@@ -28,7 +28,6 @@ class Manager:
             return None
 
     def display_task(self, t):
-        """Print a user-friendly view of a single task object (no logic changes)."""
         print("\n" + "=" * 60)
         print(f"  ID     : {t.id}")
         print(f"  Name   : {t.name}")
