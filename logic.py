@@ -1,53 +1,59 @@
 from model import task
-class manager:
+class Manager:
 
     def name_check(self,text):
             if len(text) > 50 or len(text) < 1 or not text:
-                print("Task name must be between 1 to 50 characters\n")
+                print("Error: Task name must be between 1 and 50 characters.\n")
                 return False
             return True
 
     def content_check(self,text):
             if len(text) > 500 or len(text) < 1 or not text:
-                print("Content must be between 1 to 500 characters\n")
+                print("Error: Description must be between 1 and 500 characters.\n")
                 return False
             return True
 
-    def SearchByID(self, u):
-        try:
-            userid = int(u)
-        except ValueError:
-            print("Invalid ID")
-            return -1
-
+    def search_by_id(self, u):
         for tt in self.storage:
-            if tt.id == userid:
+            if tt.id == u:
                 return tt
         return None
 
-    def SearchByName(self):
+    def validate_id(self, u):
+        try:
+            userid = int(u)
+            return userid
+        except (ValueError, TypeError):
+            print("Error: Invalid ID format. Please enter a valid numeric ID.\n")
+            return None
+
+    def display_task(self, t):
+        """Print a user-friendly view of a single task object (no logic changes)."""
+        print("\n" + "=" * 60)
+        print(f"  ID     : {t.id}")
+        print(f"  Name   : {t.name}")
+        print(f"  Status : [{t.status}]")
+        print("-" * 60)
+        print("  Description:")
+        for line in t.content.split('\n'):
+            print(f"    {line}")
+        print("=" * 60 + "\n")
+
+    def search_by_name(self):
         byname = []
         while True:
-            username = (input("Enter task Name: "))
+            username = (input("Enter task name: "))
             u = username.strip()
             result = self.name_check(u)
             if not result:
                 continue
             break
 
-        i = 0
         for t in self.storage:
             if t.name == u:
                 byname.append(t)
 
-        if len(byname) == 0:
-            return None
-
-        if len(byname) == 1:
-            return byname[0]
-
-        if len(byname) > 1:
-            return byname
+        return byname
 
     def __init__(self):
         self.storage = []
@@ -55,45 +61,56 @@ class manager:
 
     def create(self):
 
+        exit_flag = False
+        
         while True:
-            name = input("Enter task name: ")
+            name = input("Enter task name (enter 0 to cancel): ")
+            if name == "0":
+                exit_flag = True
+                print("Task creation cancelled.\n")
+                break
             n = name.strip()
             result = self.name_check(n)
             if not result:
                 continue
             break
 
-        while True:
-            content = input("Enter task description: ")
-            c = content.strip()
-            result = self.content_check(c)
-            if not result:
-                continue
-            break
+        if exit_flag == False:
+            while True:
+                content = input("Enter task description (enter 0 to cancel): ")
+                if content == "0":
+                    exit_flag = True
+                    print("Task creation cancelled.\n")
+                    break
+                c = content.strip()
+                result = self.content_check(c)
+                if not result:
+                    continue
+                break
+        
+        if exit_flag == False:
+            self.i = self.i + 1
+            Task = task()
+            Task.set(self.i, n, c)
+            self.storage.append(Task)
+            print("Task added successfully.\n")
 
-        self.i = self.i + 1
-        Task = task()
-        Task.set(self.i, n, c)
-        self.storage.append(Task)
-        print("Task added.\n")
-
-    def readall(self):
+    def read(self):
         if not self.storage:
             print("No tasks found.\n")
 
         else:
             while True:
-                text = "S.no:"
                 sno = 0
                 for t in self.storage:
                     sno = sno + 1
-                    print(text, sno, t)
+                    print(f"No. {sno}: {t}")
 
                 print("\n")
-                print("Enter 1 to View by Serial Number")
-                print("Enter 2 to View by Name")
-                print("Enter 3 to View by ID")
-                print("Enter 4 to Exit\n")
+                print("1. View by Serial Number")
+                print("2. View by Name")
+                print("3. View by ID")
+                print("0. Exit (or press 0 in any input to cancel)\n")
 
                 while True:
                     c1 = (input("Enter choice: "))
@@ -101,216 +118,257 @@ class manager:
                         choice1 = int(c1)
                         break
                     except ValueError:
-                        print("Invalid Input.\n")
+                        print("Error: Please enter a valid choice (1,2,3,0).\n")
 
                 if choice1 == 1:
                     while True:
-                        u = (input("Enter serial number: "))
+                        u = (input("Enter serial number (enter 0 to cancel): "))
+                        if u == "0":
+                            print("Operation cancelled.\n")
+                            break
                         try:
                             user = int(u)
 
                         except ValueError:
-                            print("Invalid Input.\n")
+                            print("Error: Please enter a valid numeric serial number.\n")
                             continue
 
                         if len(self.storage) < user:
-                            print("Enter Valid Serial Number.\n")
+                            print("Error: Serial number is out of range. Please enter a valid serial number.\n")
                             continue
+                        
+                        if user < 1:
+                            print("Error: Serial number must be at least 1. Please enter a valid serial number.\n")
+                            continue
+                        
                         else:
-                            print(self.storage[user - 1].name)
-                            print(self.storage[user - 1].id)
-                            print(self.storage[user - 1].status)
-                            print(self.storage[user - 1].content)
-                            print("\n")
+                            self.display_task(self.storage[user - 1])
                             break
 
                 elif choice1 == 2:
-                    d = self.SearchByName()
+                    d = self.search_by_name()
                     if not d:
-                        print("Task Not Found.\n")
-                    elif isinstance(d, task):
-                        print(d.name)
-                        print(d.id)
-                        print(d.status)
-                        print(d.content)
-                        print("\n")
-
+                        print("Error: Task not found.\n")
                     elif isinstance(d, list):
-                        for t in d:
-                            print(t.name, t.id)
-                        print("Multiple Task Found, Enter ID to open one")
+                        if len(d) == 1:
+                            self.display_task(d[0])
+                        else:
+                            for t in d:
+                                print(t.name, t.id)
+                            print("Multiple tasks found. Please enter the task ID to open one.\n")
 
-                        while True:
-                            u = (input("Enter task ID: "))
-                            result = self.SearchByID(u)
-                            if result == -1:
-                                continue
-                            else:
-                                print(result.name)
-                                print(result.id)
-                                print(result.status)
-                                print(result.content)
-                                print("\n")
-                                break
+                            while True:
+                                u = (input("Enter task ID (enter 0 to cancel): "))
+                                if u == "0":
+                                    print("Operation cancelled.\n")
+                                    break
+                                userid = self.validate_id(u)
+                                if userid is None:
+                                    continue
+                                result = self.search_by_id(userid)
+                                if result is None:
+                                    print("Error: Task not found.\n")
+                                    continue
+                                else:
+                                    self.display_task(result)
+                                    break
+                    else:
+                        # single task object
+                        self.display_task(d)
 
                 elif choice1 == 3:
                     while True:
-                        u = (input("Enter task ID: "))
-                        d = self.SearchByID(u)
-                        if d == -1:
+                        u = (input("Enter task ID (enter 0 to cancel): "))
+                        if u == "0":
+                            print("Operation cancelled.\n")
+                            break
+                        userid = self.validate_id(u)
+                        if userid is None:
                             continue
-                        elif d is None:
-                            print("Task Not Found.\n")
+                        d = self.search_by_id(userid)
+                        if d is None:
+                            print("Error: Task not found.\n")
                             break
                         else:
-                            print(d.name)
-                            print(d.id)
-                            print(d.status)
-                            print(d.content)
-                            print("\n")
+                            self.display_task(d)
                             break
 
-                elif choice1 == 4:
+                elif choice1 == 0:
                     break
 
                 else:
-                    print("Enter valid choice\n")
+                    print("Error: Please enter a valid choice (1,2,3,0).\n")
 
     def completed(self):
+        exit_flag = False
+        
         while True:
-            u = (input("Enter task ID: "))
-            d = self.SearchByID(u)
-            if d == -1:
+            u = (input("Enter task ID (enter 0 to cancel): "))
+            if u == "0":
+                exit_flag = True
+                print("Operation cancelled.\n")
+                break
+            userid = self.validate_id(u)
+            if userid is None:
                 continue
+            d = self.search_by_id(userid)
             if d is None:
-                print("No such task.\n")
+                print("Error: No task found with that ID.\n")
                 continue
             else:
                 if d.status == "Completed":
-                    print("Already Marked Completed.\n")
+                    print("This task is already marked as completed.\n")
                     break
                 else:
                     d.status = "Completed"
-                    print("Marked Completed.\n")
+                    print("Task marked as completed.\n")
                     break
 
     def todo(self):
+        exit_flag = False
+        
         while True:
-            u = (input("Enter task ID: "))
-            d = self.SearchByID(u)
-            if d == -1:
+            u = (input("Enter task ID (enter 0 to cancel): "))
+            if u == "0":
+                exit_flag = True
+                print("Operation cancelled.\n")
+                break
+            userid = self.validate_id(u)
+            if userid is None:
                 continue
+            d = self.search_by_id(userid)
             if d is None:
-                print("No such task.\n")
+                print("Error: No task found with that ID.\n")
                 continue
             else:
                 if d.status == "Todo":
-                    print("Already Marked Todo.\n")
+                    print("This task is already marked as To-Do.\n")
                     break
                 else:
                     d.status = "Todo"
-                    print("Marked Todo\n")
+                    print("Task marked as To-Do.\n")
                     break
 
-    def viewcompleted(self):
+    def view_completed(self):
         if not self.storage:
             print("No tasks found.\n")
         else:
             for t in self.storage:
                 if t.status == "Completed":
                     print(t)
+                    found = True
+                if not found:
+                    print("No completed tasks found.\n")
 
-    def viewtodo(self):
+    def view_todo(self):
         if not self.storage:
             print("No tasks found.\n")
         else:
             for t in self.storage:
                 if t.status == "Todo":
                     print(t)
+                    found = True
+                if not found:
+                    print("No To-Do tasks found.\n")
 
     def edit(self):
+        exit_flag = False
+        
         while True:
-            u = (input("Enter task ID: "))
-            d = self.SearchByID(u)
-            if d == -1:
+            u = (input("Enter task ID (enter 0 to cancel): "))
+            if u == "0":
+                exit_flag = True
+                print("Operation cancelled.\n")
+                break
+            userid = self.validate_id(u)
+            if userid is None:
                 continue
+            d = self.search_by_id(userid)
             if d is None:
-                print("No such task.\n")
+                print("Error: No task found with that ID.\n")
                 continue
             else:
                 userid = d.id
 
                 while True:
-                    print("1,  Edit Task Name")
-                    print("2,  Edit Task Description")
-                    print("3,  Exit Editing")
+                    print("1. Edit Task Name")
+                    print("2. Edit Task Description")
+                    print("0. Exit Editing")
 
                     c = input("Enter your choice: \n")
                     try:
                         choice = int(c)
                     except ValueError:
-                        print("Invalid Input.\n")
+                        print("Error: Please enter a valid choice (1,2,0).\n")
                         continue
 
                     if choice == 1:
                         while True:
-                            name = input("Enter task New name: ")
+                            name = input("Enter new task name (enter 0 to cancel): ")
+                            if name == "0":
+                                print("Edit cancelled.\n")
+                                break
                             n = name.strip()
                             result = self.name_check(n)
                             if not result:
                                 continue
                             break
-                        d.name = n
-                        print("Name Updated\n")
+                        if name != "0":
+                            d.name = n
+                            print("Task name updated successfully.\n")
                         continue
 
                     elif choice == 2:
                         while True:
-                            content = input("Enter task New description: ")
+                            content = input("Enter new task description (enter 0 to cancel): ")
+                            if content == "0":
+                                print("Edit cancelled.\n")
+                                break
                             c = content.strip()
                             result = self.content_check(c)
                             if not result:
-                                print("Invalid Description")
                                 continue
                             break
-                        d.content = c
-                        print("Content Updated\n")
+                        if content != "0":
+                            d.content = c
+                            print("Task description updated successfully.\n")
 
-                    elif choice == 3:
+                    elif choice == 0:
+                        print("Exiting edit menu.\n")
                         break
 
                     else:
-                        print("Enter valid choice\n")
-                        print("\n")
+                        print("Error: Please enter a valid choice (1,2,0).\n")
             break
 
     def delete(self):
         if not self.storage:
             print("No tasks found.\n")
         else:
-            text = "S.no:"
+            exit_flag = False
+            
             sno = 0
             for t in self.storage:
                 sno = sno + 1
-                print(text, sno, t)
+                print(f"No. {sno}: {t}")
 
             while True:
-                u = (input("Enter ID to delete: "))
-                result = self.SearchByID(u)
-                if result == -1:
+                u = (input("Enter ID to delete (enter 0 to cancel): "))
+                if u == "0":
+                    exit_flag = True
+                    print("Operation cancelled.\n")
+                    break
+                
+                userid = self.validate_id(u)
+                if userid is None:
                     continue
 
-                elif not result:
-                    print("Incorrect id.\n")
+                result = self.search_by_id(userid)
+                if not result:
+                    print("Error: Invalid ID. No task found with that ID.\n")
                     continue
-
                 else:
-                    iterator = -1
-                    for i in self.storage:
-                        iterator = iterator + 1
-                        if i.id == result.id:
-                            break
-                    self.storage.remove(self.storage[iterator])
-                    print("Task Deleted\n")
+                    self.storage.remove(result)
+                    print("Task deleted successfully.\n")
                     break
 

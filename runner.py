@@ -1,51 +1,52 @@
 from model import task
-from logic import manager
+from logic import Manager
 
 
 if __name__ == '__main__':
-    Manager = manager()
+    manager = Manager()
 
     while True:
-        print("Welcome to the Task App")
-        print("What you wanna do today ?\n")
-        print("1,  Create Task")
-        print("2,  View Tasks")
-        print("3,  Mark Task as Completed")
-        print("4,  Mark Task as Todo")
-        print("5,  View all Completed Tasks")
-        print("6,  View all Todo Tasks")
-        print("7,  Edit Task")
-        print("8,  Delete Task")
-        print("9,  Exit\n")
+        print("\n=== Task Manager ===")
+        print("What would you like to do?\n")
+        print("1. Create Task")
+        print("2. View Tasks")
+        print("3. Mark Task as Completed")
+        print("4. Mark Task as To-Do")
+        print("5. View All Completed Tasks")
+        print("6. View All To-Do Tasks")
+        print("7. Edit Task")
+        print("8. Delete Task")
+        print("0. Exit\n")
 
         choice = input("Enter your choice: \n")
 
         if choice == "1":
-            Manager.create()
+            manager.create()
 
         elif choice == "2":
-            Manager.readall()
+            manager.read()
 
         elif choice == "3":
-            Manager.completed()
+            manager.completed()
 
         elif choice == "4":
-            Manager.todo()
+            manager.todo()
 
         elif choice == "5":
-            Manager.viewcompleted()
+            manager.view_completed()
 
         elif choice == "6":
-            Manager.viewtodo()
+            manager.view_todo()
 
         elif choice == "7":
-            Manager.edit()
+            manager.edit()
 
         elif choice == "8":
-            Manager.delete()
+            manager.delete()
 
-        elif choice == "9":
+        elif choice == "0":
+            print("Thank you for using Task Manager. Goodbye!\n")
             break
 
-        else :
-            print("Invalid choice")
+        else:
+            print("Error: Please enter a valid choice (1-8,0).\n")
