@@ -24,10 +24,10 @@ Menu functions (each handles one main menu operation):
 - delete_task()
 """
 
-from model import task, TaskSchema
+from model import TaskSchema
 from logic import Manager
 from validators import validate_id, name_check, content_check
-from formatters import display_task
+from database import get_session_context
 
 
 def display_task_detail(task_schema: TaskSchema):
@@ -136,8 +136,9 @@ def create_task(manager):
         print("Task creation cancelled.\n")
         return
     
-    response = manager.add_task(name, content)
-    print(f"{response.message}\n")
+    with get_session_context() as session:
+        response = manager.add_task(name, content, session)
+        print(f"{response.message}\n")
 
 
 def view_tasks(manager):
@@ -152,81 +153,82 @@ def view_tasks(manager):
     Args:
         manager (Manager): Manager instance
     """
-    response = manager.get_all_tasks()
-    tasks = response.data
-    
-    if not tasks:
-        print("No tasks found.\n")
-        return
-    
-    while True:
-        # Display all tasks
-        for sno, t in enumerate(tasks, 1):
-            print(f"No. {sno}: {t.name} [{t.id}]")
+    with get_session_context() as session:
+        response = manager.get_all_tasks(session)
+        tasks = response.data
         
-        print("\n1. View by Serial Number")
-        print("2. View by Name")
-        print("3. View by ID")
-        print("0. Exit\n")
+        if not tasks:
+            print("No tasks found.\n")
+            return
         
-        choice = input("Enter choice: ")
-        
-        if choice == "1":
-            while True:
-                user_input = input("Enter serial number (enter 0 to cancel): ")
-                if user_input == "0":
-                    print("Operation cancelled.\n")
-                    break
-                try:
-                    serial = int(user_input)
-                    if serial < 1 or serial > len(tasks):
-                        print("Error: Serial number is out of range.\n")
-                        continue
-                    task_obj = tasks[serial - 1]
-                    display_task_detail(task_obj)
-                    break
-                except ValueError:
-                    print("Error: Please enter a valid numeric serial number.\n")
-        
-        elif choice == "2":
-            name = get_task_name_from_user("Enter task name: ")
-            if name:
-                found_tasks = manager.search_by_name(name)
-                if not found_tasks:
-                    print("Error: Task not found.\n")
-                elif len(found_tasks) == 1:
-                    display_task_detail(TaskSchema(id=found_tasks[0].id, name=found_tasks[0].name, content=found_tasks[0].content, status=found_tasks[0].status))
-                else:
-                    while True:
-                        for t in found_tasks:
-                            print(f"{t.name} [ID: {t.id}]")
-                        task_id = get_task_id_from_user("Enter task ID to view: ")
-                        if task_id:
-                            task_obj = manager.search_by_id(task_id)
-                            if task_obj:
-                                display_task_detail(TaskSchema(id=task_obj.id, name=task_obj.name, content=task_obj.content, status=task_obj.status))
-                                break
-                            elif task_id is None:
-                                print("Operation cancelled.\n")
-                                break
-                            else:
-                                print("Error: Invalid task ID.\n")
-                                continue
-        
-        elif choice == "3":
-            task_id = get_task_id_from_user("Enter task ID: ")
-            if task_id:
-                task_obj = manager.search_by_id(task_id)
-                if task_obj:
-                    display_task_detail(TaskSchema(id=task_obj.id, name=task_obj.name, content=task_obj.content, status=task_obj.status))
-                else:
-                    print("Error: Task not found.\n")
-        
-        elif choice == "0":
-            break
-        
-        else:
-            print("Error: Please enter a valid choice (1,2,3,0).\n")
+        while True:
+            # Display all tasks
+            for sno, t in enumerate(tasks, 1):
+                print(f"No. {sno}: {t.name} [{t.id}]")
+            
+            print("\n1. View by Serial Number")
+            print("2. View by Name")
+            print("3. View by ID")
+            print("0. Exit\n")
+            
+            choice = input("Enter choice: ")
+            
+            if choice == "1":
+                while True:
+                    user_input = input("Enter serial number (enter 0 to cancel): ")
+                    if user_input == "0":
+                        print("Operation cancelled.\n")
+                        break
+                    try:
+                        serial = int(user_input)
+                        if serial < 1 or serial > len(tasks):
+                            print("Error: Serial number is out of range.\n")
+                            continue
+                        task_obj = tasks[serial - 1]
+                        display_task_detail(task_obj)
+                        break
+                    except ValueError:
+                        print("Error: Please enter a valid numeric serial number.\n")
+            
+            elif choice == "2":
+                name = get_task_name_from_user("Enter task name: ")
+                if name:
+                    found_tasks = manager.search_by_name(name, session)
+                    if not found_tasks:
+                        print("Error: Task not found.\n")
+                    elif len(found_tasks) == 1:
+                        display_task_detail(TaskSchema.from_orm(found_tasks[0]))
+                    else:
+                        while True:
+                            for t in found_tasks:
+                                print(f"{t.name} [ID: {t.id}]")
+                            task_id = get_task_id_from_user("Enter task ID to view: ")
+                            if task_id:
+                                task_obj = manager.search_by_id(task_id, session)
+                                if task_obj:
+                                    display_task_detail(TaskSchema.from_orm(task_obj))
+                                    break
+                                elif task_id is None:
+                                    print("Operation cancelled.\n")
+                                    break
+                                else:
+                                    print("Error: Invalid task ID.\n")
+                                    continue
+            
+            elif choice == "3":
+                task_id = get_task_id_from_user("Enter task ID: ")
+                if task_id:
+                    task_obj = manager.search_by_id(task_id, session)
+                    if task_obj:
+                        display_task_detail(TaskSchema.from_orm(task_obj))
+                    else:
+                        print("Error: Task not found.\n")
+            
+            elif choice == "0":
+                break
+            
+            else:
+                print("Error: Please enter a valid choice (1,2,3,0).\n")
 
 
 def mark_task_completed(manager):
@@ -240,8 +242,9 @@ def mark_task_completed(manager):
     """
     task_id = get_task_id_from_user()
     if task_id:
-        response = manager.mark_completed(task_id)
-        print(f"{response.message}\n")
+        with get_session_context() as session:
+            response = manager.mark_completed(task_id, session)
+            print(f"{response.message}\n")
 
 
 def mark_task_todo(manager):
@@ -255,8 +258,9 @@ def mark_task_todo(manager):
     """
     task_id = get_task_id_from_user()
     if task_id:
-        response = manager.mark_todo(task_id)
-        print(f"{response.message}\n")
+        with get_session_context() as session:
+            response = manager.mark_todo(task_id, session)
+            print(f"{response.message}\n")
 
 
 def view_completed_tasks(manager):
@@ -268,13 +272,14 @@ def view_completed_tasks(manager):
     Args:
         manager (Manager): Manager instance
     """
-    response = manager.get_completed_tasks()
-    if not response.data:
-        print(f"{response.message}\n")
-    else:
-        for t in response.data:
-            print(f"{t.name} [{t.id}]")
-        print()
+    with get_session_context() as session:
+        response = manager.get_completed_tasks(session)
+        if not response.data:
+            print(f"{response.message}\n")
+        else:
+            for t in response.data:
+                print(f"{t.name} [{t.id}]")
+            print()
 
 
 def view_todo_tasks(manager):
@@ -286,13 +291,14 @@ def view_todo_tasks(manager):
     Args:
         manager (Manager): Manager instance
     """
-    response = manager.get_todo_tasks()
-    if not response.data:
-        print(f"{response.message}\n")
-    else:
-        for t in response.data:
-            print(f"{t.name} [{t.id}]")
-        print()
+    with get_session_context() as session:
+        response = manager.get_todo_tasks(session)
+        if not response.data:
+            print(f"{response.message}\n")
+        else:
+            for t in response.data:
+                print(f"{t.name} [{t.id}]")
+            print()
 
 
 def edit_task(manager):
@@ -313,36 +319,37 @@ def edit_task(manager):
         print("Operation cancelled.\n")
         return
     
-    task_obj = manager.search_by_id(task_id)
-    if task_obj is None:
-        print("Error: No task found with that ID.\n")
-        return
-    
-    while True:
-        print("1. Edit Task Name")
-        print("2. Edit Task Description")
-        print("0. Exit Editing\n")
+    with get_session_context() as session:
+        task_obj = manager.search_by_id(task_id, session)
+        if task_obj is None:
+            print("Error: No task found with that ID.\n")
+            return
         
-        choice = input("Enter your choice: ")
-        
-        if choice == "1":
-            new_name = get_task_name_from_user("Enter new task name (enter 0 to cancel): ")
-            if new_name:
-                response = manager.update_task(task_id, new_name=new_name)
-                print(f"{response.message}\n")
-        
-        elif choice == "2":
-            new_content = get_task_content_from_user("Enter new task description (enter 0 to cancel): ")
-            if new_content:
-                response = manager.update_task(task_id, new_content=new_content)
-                print(f"{response.message}\n")
-        
-        elif choice == "0":
-            print("Exiting edit menu.\n")
-            break
-        
-        else:
-            print("Error: Please enter a valid choice (1,2,0).\n")
+        while True:
+            print("1. Edit Task Name")
+            print("2. Edit Task Description")
+            print("0. Exit Editing\n")
+            
+            choice = input("Enter your choice: ")
+            
+            if choice == "1":
+                new_name = get_task_name_from_user("Enter new task name (enter 0 to cancel): ")
+                if new_name:
+                    response = manager.update_task(task_id, new_name=new_name, session=session)
+                    print(f"{response.message}\n")
+            
+            elif choice == "2":
+                new_content = get_task_content_from_user("Enter new task description (enter 0 to cancel): ")
+                if new_content:
+                    response = manager.update_task(task_id, new_content=new_content, session=session)
+                    print(f"{response.message}\n")
+            
+            elif choice == "0":
+                print("Exiting edit menu.\n")
+                break
+            
+            else:
+                print("Error: Please enter a valid choice (1,2,0).\n")
 
 
 def delete_task(manager):
@@ -355,21 +362,22 @@ def delete_task(manager):
     Args:
         manager (Manager): Manager instance
     """
-    response = manager.get_all_tasks()
-    tasks = response.data
-    
-    if not tasks:
-        print("No tasks found.\n")
-        return
-    
-    for sno, t in enumerate(tasks, 1):
-        print(f"No. {sno}: {t.name} [{t.id}]")
-    print()
-    
-    task_id = get_task_id_from_user("Enter task ID to delete (enter 0 to cancel): ")
-    if task_id:
-        response = manager.delete_task(task_id)
-        print(f"{response.message}\n")
+    with get_session_context() as session:
+        response = manager.get_all_tasks(session)
+        tasks = response.data
+        
+        if not tasks:
+            print("No tasks found.\n")
+            return
+        
+        for sno, t in enumerate(tasks, 1):
+            print(f"No. {sno}: {t.name} [{t.id}]")
+        print()
+        
+        task_id = get_task_id_from_user("Enter task ID to delete (enter 0 to cancel): ")
+        if task_id:
+            response = manager.delete_task(task_id, session)
+            print(f"{response.message}\n")
 
 
 

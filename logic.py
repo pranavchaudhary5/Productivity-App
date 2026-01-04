@@ -14,7 +14,7 @@ This design makes it easy to integrate with FastAPI or other frameworks.
 from model import task, OperationResponse, TaskListResponse, TaskSchema
 from validators import name_check, content_check, validate_id
 from database import TaskDB, get_session, create_db_and_tables
-from sqlmodel import select
+from sqlmodel import select, Session
 
 
 class Manager:
@@ -41,37 +41,37 @@ class Manager:
 
     # ===== SEARCH METHODS =====
     
-    def search_by_id(self, task_id):
+    def search_by_id(self, task_id, session: Session):
         """
         Search for a task by its ID in database.
         
         Args:
             task_id (int): Task ID to search for
+            session (Session): Database session
             
         Returns:
             TaskDB: Task object if found, None otherwise
         """
-        with get_session() as session:
-            task = session.get(TaskDB, task_id)
-            return task
+        task = session.get(TaskDB, task_id)
+        return task
 
-    def search_by_name(self, name):
+    def search_by_name(self, name, session: Session):
         """
         Search for tasks by name in database.
         
         Args:
             name (str): Task name to search for (exact match)
+            session (Session): Database session
             
         Returns:
             list: List of TaskDB objects matching the name
         """
-        with get_session() as session:
-            tasks = session.exec(select(TaskDB).where(TaskDB.name == name)).all()
-            return tasks
+        tasks = session.exec(select(TaskDB).where(TaskDB.name == name)).all()
+        return tasks
 
     # ===== CRUD METHODS =====
     
-    def add_task(self, name, content):
+    def add_task(self, name, content, session: Session):
         """
         Create and add a new task to database.
         
@@ -81,6 +81,7 @@ class Manager:
         Args:
             name (str): Task name (1-50 characters)
             content (str): Task description (1-500 characters)
+            session (Session): Database session
             
         Returns:
             OperationResponse: 
@@ -96,28 +97,29 @@ class Manager:
             return OperationResponse(success=False, message=content_validation.message)
         
         # Database operation
-        with get_session() as session:
-            new_task = TaskDB(name=name, content=content, status="Todo")
-            session.add(new_task)
-            session.commit()
-            session.refresh(new_task)
-            
-            task_schema = TaskSchema(id=new_task.id, name=new_task.name, content=new_task.content, status=new_task.status)
-            return OperationResponse(success=True, message="Task added successfully", data=task_schema)
+        new_task = TaskDB(name=name, content=content, status="Todo")
+        session.add(new_task)
+        session.commit()
+        session.refresh(new_task)
+        
+        task_schema = TaskSchema(id=new_task.id, name=new_task.name, content=new_task.content, status=new_task.status)
+        return OperationResponse(success=True, message="Task added successfully", data=task_schema)
 
-    def get_all_tasks(self):
+    def get_all_tasks(self, session: Session):
         """
         Retrieve all tasks from database.
         
+        Args:
+            session (Session): Database session
+            
         Returns:
             TaskListResponse: Always succeeds, returns all tasks (empty list if none)
         """
-        with get_session() as session:
-            tasks = session.exec(select(TaskDB)).all()
-            tasks_data = [TaskSchema(id=t.id, name=t.name, content=t.content, status=t.status) for t in tasks]
-            return TaskListResponse(success=True, message="Tasks retrieved", data=tasks_data)
+        tasks = session.exec(select(TaskDB)).all()
+        tasks_data = [TaskSchema(id=t.id, name=t.name, content=t.content, status=t.status) for t in tasks]
+        return TaskListResponse(success=True, message="Tasks retrieved", data=tasks_data)
 
-    def update_task(self, task_id, new_name=None, new_content=None):
+    def update_task(self, task_id, new_name=None, new_content=None, session: Session = None):
         """
         Update an existing task's name and/or content in database.
         
@@ -128,134 +130,138 @@ class Manager:
             task_id (int): ID of task to update
             new_name (Optional[str]): New task name
             new_content (Optional[str]): New task content
+            session (Session): Database session
             
         Returns:
             OperationResponse:
                 - success=True with updated TaskSchema if successful
                 - success=False with error message if task not found or validation fails
         """
-        with get_session() as session:
-            task = session.get(TaskDB, task_id)
-            if task is None:
-                return OperationResponse(success=False, message="Task not found")
-            
-            if new_name:
-                name_validation = name_check(new_name)
-                if not name_validation.success:
-                    return OperationResponse(success=False, message=name_validation.message)
-                task.name = new_name
-            
-            if new_content:
-                content_validation = content_check(new_content)
-                if not content_validation.success:
-                    return OperationResponse(success=False, message=content_validation.message)
-                task.content = new_content
-            
-            session.commit()
-            session.refresh(task)
-            
-            task_schema = TaskSchema(id=task.id, name=task.name, content=task.content, status=task.status)
-            return OperationResponse(success=True, message="Task updated successfully", data=task_schema)
+        task = session.get(TaskDB, task_id)
+        if task is None:
+            return OperationResponse(success=False, message="Task not found")
+        
+        if new_name:
+            name_validation = name_check(new_name)
+            if not name_validation.success:
+                return OperationResponse(success=False, message=name_validation.message)
+            task.name = new_name
+        
+        if new_content:
+            content_validation = content_check(new_content)
+            if not content_validation.success:
+                return OperationResponse(success=False, message=content_validation.message)
+            task.content = new_content
+        
+        session.commit()
+        session.refresh(task)
+        
+        task_schema = TaskSchema(id=task.id, name=task.name, content=task.content, status=task.status)
+        return OperationResponse(success=True, message="Task updated successfully", data=task_schema)
 
-    def mark_completed(self, task_id):
+    def mark_completed(self, task_id, session: Session):
         """
         Mark a task as completed in database.
         
         Args:
             task_id (int): ID of task to mark as completed
+            session (Session): Database session
             
         Returns:
             OperationResponse:
                 - success=True with updated TaskSchema if successful
                 - success=False with error message if task not found or already completed
         """
-        with get_session() as session:
-            task = session.get(TaskDB, task_id)
-            if task is None:
-                return OperationResponse(success=False, message="Task not found")
-            if task.status == "Completed":
-                return OperationResponse(success=False, message="Task is already completed")
-            
-            task.status = "Completed"
-            session.commit()
-            session.refresh(task)
-            
-            task_schema = TaskSchema(id=task.id, name=task.name, content=task.content, status=task.status)
-            return OperationResponse(success=True, message="Task marked as completed", data=task_schema)
+        task = session.get(TaskDB, task_id)
+        if task is None:
+            return OperationResponse(success=False, message="Task not found")
+        if task.status == "Completed":
+            return OperationResponse(success=False, message="Task is already completed")
+        
+        task.status = "Completed"
+        session.commit()
+        session.refresh(task)
+        
+        task_schema = TaskSchema(id=task.id, name=task.name, content=task.content, status=task.status)
+        return OperationResponse(success=True, message="Task marked as completed", data=task_schema)
 
-    def mark_todo(self, task_id):
+    def mark_todo(self, task_id, session: Session):
         """
         Mark a task as to-do in database.
         
         Args:
             task_id (int): ID of task to mark as to-do
+            session (Session): Database session
             
         Returns:
             OperationResponse:
                 - success=True with updated TaskSchema if successful
                 - success=False with error message if task not found or already to-do
         """
-        with get_session() as session:
-            task = session.get(TaskDB, task_id)
-            if task is None:
-                return OperationResponse(success=False, message="Task not found")
-            if task.status == "Todo":
-                return OperationResponse(success=False, message="Task is already marked as to-do")
-            
-            task.status = "Todo"
-            session.commit()
-            session.refresh(task)
-            
-            task_schema = TaskSchema(id=task.id, name=task.name, content=task.content, status=task.status)
-            return OperationResponse(success=True, message="Task marked as to-do", data=task_schema)
+        task = session.get(TaskDB, task_id)
+        if task is None:
+            return OperationResponse(success=False, message="Task not found")
+        if task.status == "Todo":
+            return OperationResponse(success=False, message="Task is already marked as to-do")
+        
+        task.status = "Todo"
+        session.commit()
+        session.refresh(task)
+        
+        task_schema = TaskSchema(id=task.id, name=task.name, content=task.content, status=task.status)
+        return OperationResponse(success=True, message="Task marked as to-do", data=task_schema)
 
-    def delete_task(self, task_id):
+    def delete_task(self, task_id, session: Session):
         """
         Delete a task by ID from database.
         
         Args:
             task_id (int): ID of task to delete
+            session (Session): Database session
             
         Returns:
             OperationResponse:
                 - success=True if deletion successful
                 - success=False with error message if task not found
         """
-        with get_session() as session:
-            task = session.get(TaskDB, task_id)
-            if task is None:
-                return OperationResponse(success=False, message="Task not found")
-            
-            session.delete(task)
-            session.commit()
-            return OperationResponse(success=True, message="Task deleted successfully")
+        task = session.get(TaskDB, task_id)
+        if task is None:
+            return OperationResponse(success=False, message="Task not found")
+        
+        session.delete(task)
+        session.commit()
+        return OperationResponse(success=True, message="Task deleted successfully")
 
-    def get_completed_tasks(self):
+    def get_completed_tasks(self, session: Session):
         """
         Retrieve all completed tasks from database.
         
+        Args:
+            session (Session): Database session
+            
         Returns:
             TaskListResponse: List of all tasks with status "Completed"
         """
-        with get_session() as session:
-            tasks = session.exec(select(TaskDB).where(TaskDB.status == "Completed")).all()
-            tasks_data = [TaskSchema(id=t.id, name=t.name, content=t.content, status=t.status) for t in tasks]
-            if not tasks_data:
-                return TaskListResponse(success=True, message="No completed tasks found", data=[])
-            return TaskListResponse(success=True, message="Completed tasks retrieved", data=tasks_data)
+        tasks = session.exec(select(TaskDB).where(TaskDB.status == "Completed")).all()
+        tasks_data = [TaskSchema(id=t.id, name=t.name, content=t.content, status=t.status) for t in tasks]
+        if not tasks_data:
+            return TaskListResponse(success=True, message="No completed tasks found", data=[])
+        return TaskListResponse(success=True, message="Completed tasks retrieved", data=tasks_data)
 
-    def get_todo_tasks(self):
+    def get_todo_tasks(self, session: Session):
         """
         Retrieve all to-do tasks from database.
         
+        Args:
+            session (Session): Database session
+            
         Returns:
             TaskListResponse: List of all tasks with status "Todo"
         """
-        with get_session() as session:
-            tasks = session.exec(select(TaskDB).where(TaskDB.status == "Todo")).all()
-            tasks_data = [TaskSchema(id=t.id, name=t.name, content=t.content, status=t.status) for t in tasks]
-            if not tasks_data:
-                return TaskListResponse(success=True, message="No to-do tasks found", data=[])
-            return TaskListResponse(success=True, message="To-do tasks retrieved", data=tasks_data)
+        tasks = session.exec(select(TaskDB).where(TaskDB.status == "Todo")).all()
+        tasks_data = [TaskSchema(id=t.id, name=t.name, content=t.content, status=t.status) for t in tasks]
+        if not tasks_data:
+            return TaskListResponse(success=True, message="No to-do tasks found", data=[])
+        return TaskListResponse(success=True, message="To-do tasks retrieved", data=tasks_data)
 
     

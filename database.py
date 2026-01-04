@@ -30,5 +30,10 @@ def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
 def get_session():
-    """Get a database session."""
+    """Get a database session for FastAPI dependency injection."""
+    with Session(engine) as session:
+        yield session
+
+def get_session_context():
+    """Get a database session for CLI context manager usage."""
     return Session(engine)
